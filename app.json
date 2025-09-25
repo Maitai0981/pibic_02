@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "pibic",
+    "slug": "snack-04937717-5519-4b73-896d-b53f00249030",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "permissions": [
+        "INTERNET"
+      ],
+      "package": "com.pibic.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "apiBaseUrl": "",
+      "apiProtocol": "http",
+      "apiPort": "5000",
+      "apiPrefix": "/api",
+      "eas": {
+        "projectId": "147ed665-05e0-4846-8d1f-b06cbe315a23"
+      }
+    }
+  }
+}
