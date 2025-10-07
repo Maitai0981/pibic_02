@@ -1,42 +1,69 @@
 {
   "expo": {
-    "name": "pibic",
-    "slug": "snack-04937717-5519-4b73-896d-b53f00249030",
+    "name": "PIBIC Dermatologia",
+    "slug": "pibic-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pibic.dermatologia",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Este app precisa acessar suas fotos para análise dermatológica.",
+        "NSCameraUsageDescription": "Este app precisa acessar a câmera para capturar imagens de lesões.",
+        "NSPhotoLibraryAddUsageDescription": "Este app precisa salvar laudos na sua galeria."
+      }
     },
     "android": {
-      "permissions": [
-        "INTERNET"
-      ],
-      "package": "com.pibic.app",
+      "package": "com.pibic.dermatologia",
       "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "INTERNET",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
+    "plugins": [
+      "expo-dev-client",
+      "expo-font"
+    ],
     "extra": {
-      "apiBaseUrl": "",
+      "apiBaseUrl": "http://172.25.153.3:5000",
       "apiProtocol": "http",
       "apiPort": "5000",
       "apiPrefix": "/api",
       "eas": {
-        "projectId": "147ed665-05e0-4846-8d1f-b06cbe315a23"
+        "projectId": "34cf275c-bac3-49b7-a7b8-7ac9741c475c"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "owner": "math2091",
+    "updates": {
+      "url": "https://u.expo.dev/34cf275c-bac3-49b7-a7b8-7ac9741c475c"
     }
   }
 }
