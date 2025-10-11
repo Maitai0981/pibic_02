@@ -8,6 +8,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import emailjs from 'emailjs-com';
+
 const ContactScreen = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -20,10 +22,29 @@ const ContactScreen = () => {
       return;
     }
 
-    Alert.alert('Contato Enviado', `Obrigado ${name}, sua mensagem foi enviada com sucesso!`);
-    setName('');
-    setEmail('');
-    setMessage('');
+    const templateParams = {
+      from_name: name,
+      from_email: email,
+      message: message,
+    };
+
+    emailjs
+      .send(
+        'service_hwqettb',
+        'template_y2g1byu',
+        templateParams,
+        'UGiF3DH70meOTMYkD'
+      )
+      .then(() => {
+        Alert.alert('Sucesso', 'Mensagem enviada com sucesso!');
+        setName('');
+        setEmail('');
+        setMessage('');
+      })
+      .catch((error) => {
+        console.error('Erro ao enviar:', error);
+        Alert.alert('Erro', 'Ocorreu um erro ao enviar a mensagem. Tente novamente.');
+      });
   };
 
   const backgroundColor = isDark ? '#111827' : '#f3f4f6';

@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, Alert, Platform } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, ScrollView, Alert, Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import styles from '../styles/style';
 import ImageButton from '../components/ImageButton';
 import * as FileSystem from 'expo-file-system';
+
+// --- Funções Auxiliares (Mantidas) ---
 
 const formatReportText = (result) => {
   const lines = [];
@@ -74,13 +76,96 @@ const renderLaudoPretty = (raw, isDark) => {
   );
 };
 
+// --- Componente: Laudo Simplificado (Summary e Descrição) ---
+
+const ReportSummary = ({ result, isDark }) => {
+  if (!result.laudo) {
+    return (
+      <Text style={{ color: isDark ? '#f3f4f6' : '#374151', textAlign: 'center', marginTop: 20 }}>
+        O laudo completo não foi fornecido pela análise.
+      </Text>
+    );
+  }
+
+  // Função para extrair o texto de uma seção específica (ex: DESCRIÇÃO CLÍNICA)
+  const extractSectionText = (fullText, sectionTitle) => {
+    // Escapa caracteres especiais para usar como regex
+    const escapedTitle = sectionTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // Regex: Busca o título, ignora quebras de linha/espaços, e captura o texto
+    // até encontrar o próximo cabeçalho em negrito (**SECAO:**) ou o fim do texto.
+    const regex = new RegExp(`\\*\\*${escapedTitle}:\\*\\*\\s*\\n?([\\s\\S]*?)(?=\\n\\*\\*|$)`, 'i');
+    
+    const match = fullText.match(regex);
+    
+    // O texto capturado está no primeiro grupo (índice 1) da correspondência.
+    if (match && match[1]) {
+        // Limpa espaços em branco extras no início e fim
+        return match[1].trim();
+    }
+    return 'Conteúdo da Descrição Clínica não encontrado no laudo.';
+  };
+
+  const clinicalDescription = extractSectionText(result.laudo, 'DESCRIÇÃO CLÍNICA');
+
+  return (
+    <SectionCard isDark={isDark} icon="clipboard-outline" title="DESCRIÇÃO CLÍNICA">
+      {/* Exibe o texto extraído, usando a função de formatação */}
+      {renderLaudoPretty(clinicalDescription, isDark)}
+    </SectionCard>
+  );
+};
+
+// --- Componente: Laudo Completo ---
+
+const ReportFull = ({ result, isDark }) => (
+  <View>
+    {/* Resumo da Análise */}
+    <SectionCard isDark={isDark} icon="document-text-outline" title="Resumo da Análise">
+      {!!result.diagnostico && (
+        <View style={{ marginBottom: 8 }}>
+          <Text style={{ color: isDark ? '#f9fafb' : '#1f2937', fontWeight: '700' }}>{result.diagnostico}</Text>
+        </View>
+      )}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        {!!result.alternativas && (
+          <Text style={{ color: isDark ? '#f3f4f6' : '#374151', marginRight: 12, flex: 1 }}>
+            Alternativas: {result.alternativas}
+          </Text>
+        )}
+        <PriorityBadge value={result.prioridade} isDark={isDark} />
+      </View>
+      {!!result.modelo && (
+        <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 8, fontSize: 12 }}>
+          Modelo: {result.modelo}
+        </Text>
+      )}
+    </SectionCard>
+
+    {/* Descrição da Lesão */}
+    {!!result.descricao && (
+      <SectionCard isDark={isDark} icon="color-palette-outline" title="Descrição da Lesão">
+        <Text style={{ color: isDark ? '#f3f4f6' : '#374151', lineHeight: 22 }}>{result.descricao}</Text>
+      </SectionCard>
+    )}
+    <SectionCard isDark={isDark} icon="clipboard-outline" title="Laudo Completo">
+      {renderLaudoPretty(result.laudo, isDark)}
+    </SectionCard>
+  </View>
+);
+
+// --- Componente Principal Refatorado com Abas ---
+
 const ReportScreen = ({ route }) => {
   const { isDark } = useTheme();
   const result = route?.params?.result ?? null;
+  // Estado para controlar a aba ativa: 'summary' ou 'full'
+  const [activeTab, setActiveTab] = useState('summary'); 
 
   const reportText = useMemo(() => formatReportText(result), [result]);
 
   const handleDownload = async () => {
+    // ... Lógica de download (mantida) ...
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       const fileName = `laudo_${timestamp}.txt`;
@@ -107,6 +192,26 @@ const ReportScreen = ({ route }) => {
     }
   };
 
+  // Estilos da Barra de Abas
+  const tabContainerStyle = { 
+    flexDirection: 'row', 
+    marginBottom: 20, 
+    borderBottomWidth: 1, 
+    borderBottomColor: isDark ? '#374151' : '#e5e7eb' 
+  };
+  const tabButtonStyle = (isActive) => ({
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: isActive ? 3 : 0,
+    borderBottomColor: isActive ? '#3b82f6' : 'transparent',
+  });
+  const tabTextStyle = (isActive) => ({
+    color: isActive ? (isDark ? '#f9fafb' : '#1f2937') : (isDark ? '#9ca3af' : '#6b7280'),
+    fontWeight: isActive ? '700' : '500',
+    fontSize: 14,
+  });
+
+
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View
@@ -123,38 +228,27 @@ const ReportScreen = ({ route }) => {
           </Text>
         ) : (
           <View>
-            <SectionCard isDark={isDark} icon="document-text-outline" title="Resumo da Análise">
-              {!!result.diagnostico && (
-                <View style={{ marginBottom: 8 }}>
-                  <Text style={{ color: isDark ? '#f9fafb' : '#1f2937', fontWeight: '700' }}>{result.diagnostico}</Text>
-                </View>
-              )}
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                {!!result.alternativas && (
-                  <Text style={{ color: isDark ? '#f3f4f6' : '#374151', marginRight: 12, flex: 1 }}>
-                    Alternativas: {result.alternativas}
-                  </Text>
-                )}
-                <PriorityBadge value={result.prioridade} isDark={isDark} />
-              </View>
-              {!!result.modelo && (
-                <Text style={{ color: isDark ? '#9ca3af' : '#6b7280', marginTop: 8, fontSize: 12 }}>
-                  Modelo: {result.modelo}
-                </Text>
-              )}
-            </SectionCard>
+            {/* Barra de Abas */}
+            <View style={tabContainerStyle}>
+              <TouchableOpacity 
+                onPress={() => setActiveTab('summary')}
+                style={tabButtonStyle(activeTab === 'summary')}
+              >
+                <Text style={tabTextStyle(activeTab === 'summary')}>Laudo Simplificado</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={() => setActiveTab('full')}
+                style={tabButtonStyle(activeTab === 'full')}
+              >
+                <Text style={tabTextStyle(activeTab === 'full')}>Laudo Completo</Text>
+              </TouchableOpacity>
+            </View>
 
-            {!!result.descricao && (
-              <SectionCard isDark={isDark} icon="color-palette-outline" title="Descrição da Lesão">
-                <Text style={{ color: isDark ? '#f3f4f6' : '#374151', lineHeight: 22 }}>{result.descricao}</Text>
-              </SectionCard>
-            )}
+            {/* Conteúdo da Aba */}
+            {activeTab === 'summary' && <ReportSummary result={result} isDark={isDark} />}
+            {activeTab === 'full' && <ReportFull result={result} isDark={isDark} />}
 
-            {!!result.laudo && (
-              <SectionCard isDark={isDark} icon="clipboard-outline" title="Laudo Completo">
-                {renderLaudoPretty(result.laudo, isDark)}
-              </SectionCard>
-            )}
           </View>
         )}
 
@@ -167,5 +261,3 @@ const ReportScreen = ({ route }) => {
 };
 
 export default ReportScreen;
-
-

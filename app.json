@@ -58,9 +58,7 @@
         "projectId": "34cf275c-bac3-49b7-a7b8-7ac9741c475c"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": "1.0.0",
     "owner": "math2091",
     "updates": {
       "url": "https://u.expo.dev/34cf275c-bac3-49b7-a7b8-7ac9741c475c"
