@@ -74,9 +74,3 @@ O aplicativo está configurado para buscar o status (`/health`) e enviar requisi
   * **Prefixo:** `/api`
 
 Se o seu servidor backend estiver em um endereço diferente, você deve atualizar a chave `apiBaseUrl` dentro de `expo.extra` no arquivo `app.json`.
-
-## 🖼️ Screenshots (Exemplos)
-
-| Captura e Análise de Imagem | Laudo Completo | Configurações (Modo Escuro e Claro) | Contato |
-|:---:|:---:|:---:|:---:|
-| [Captura de Imagem](https://www.google.com/search?q=maitai0981/pibic/pibic-9d53f6920d1f6ecfd57d5258d5acff75e7e91213/fotos/images.zip/1.png) (A) | [Laudo Completo](https://www.google.com/search?q=maitai0981/pibic/pibic-9d53f6920d1f6ecfd57d5258d5acff75e7e91213/fotos/images.zip/1.png) (C) | [Configurações](https://www.google.com/search?q=maitai0981/pibic/pibic-9d53f6920d1f6ecfd57d5258d5acff75e7e91213/fotos/images.zip/2.png) (A e B) | [Tela de Contato](https://www.google.com/search?q=maitai0981/pibic/pibic-9d53f6920d1f6ecfd57d5258d5acff75e7e91213/fotos/images.zip/1.png) (E) |
