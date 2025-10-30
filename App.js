@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -6,8 +6,8 @@ import HomeScreen from './screens/HomeScreen';
 import ReportScreen from './screens/ReportScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import ContactScreen from './screens/ContactScreen';
+import { registerUploadTask } from './services/uploadTask'; // Ajuste o caminho se necessário
 
-// ⚠️ Importe o Vector Icons (Exemplo: Ionicons)
 import Ionicons from 'react-native-vector-icons/Ionicons'; 
 
 const Tab = createBottomTabNavigator(); 
@@ -75,6 +75,10 @@ function AppWithTheme() {
 }
 
 export default function App() {
+
+  useEffect(() => {
+    registerUploadTask();
+  }, []);
   return (
     <ThemeProvider>
       <AppWithTheme />

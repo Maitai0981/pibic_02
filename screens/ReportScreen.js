@@ -110,8 +110,11 @@ const ReportSummary = ({ result, isDark }) => {
 
   return (
     <SectionCard isDark={isDark} icon="clipboard-outline" title="DESCRIÇÃO CLÍNICA">
-      {/* Exibe o texto extraído, usando a função de formatação */}
-      {renderLaudoPretty(clinicalDescription, isDark)}
+      {!!result.diagnostico && (
+        <View style={{ marginBottom: 8 }}>
+          <Text style={{ color: isDark ? '#f9fafb' : '#1f2937', fontWeight: '700' }}>{result.diagnostico}</Text>
+        </View>
+      )}
     </SectionCard>
   );
 };
