@@ -48,7 +48,6 @@
     "plugins": [
       "expo-dev-client",
       "expo-font",
-      "react-native-pytorch-core"
     ],
     "extra": {
       "apiBaseUrl": "http://172.25.153.3:5000",

@@ -3,6 +3,14 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
+// Adiciona extensões de modelos de IA
+config.resolver.assetExts.push(
+  'pte',  // Modelos ExecuTorch
+  'ptl',  // Modelos PyTorch Lite
+  'bin',  // Binários de modelos
+  'tflite' // TensorFlow Lite (se usar)
+);
+
 // Corrige warning de expo-asset
 config.resolver.resolveRequest = (context, realModuleName, platform, moduleName) => {
   if (realModuleName.includes('expo-asset/build/resolveAssetSource')) {
@@ -14,7 +22,7 @@ config.resolver.resolveRequest = (context, realModuleName, platform, moduleName)
       ),
     };
   }
-  return null;
+  return context.resolveRequest(context, realModuleName, platform);
 };
 
 module.exports = config;
