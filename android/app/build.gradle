@@ -21,7 +21,7 @@ react {
     bundleCommand = "export:embed"
 
     /* Folders */
-     //   The root of your project, i.e. where "package.json" lives. Default is '../..'
+    //   The root of your project, i.e. where "package.json" lives. Default is '../..'
     // root = file("../../")
     //   The folder where the react-native NPM package is. Default is ../../node_modules/react-native
     // reactNativeDir = file("../../node_modules/react-native")
@@ -91,6 +91,21 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+    }
+
+    // ADICIONADO: Configuração de packaging para resolver conflitos
+    packagingOptions {
+        // Escolhe o primeiro arquivo encontrado ao invés de falhar
+        pickFirst 'lib/x86/libjsi.so'
+        pickFirst 'lib/x86_64/libjsi.so'
+        pickFirst 'lib/armeabi-v7a/libjsi.so'
+        pickFirst 'lib/arm64-v8a/libjsi.so'
+
+        // Outras bibliotecas que podem causar conflito
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
     }
 
     buildTypes {

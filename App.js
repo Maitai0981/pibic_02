@@ -6,7 +6,7 @@ import HomeScreen from './screens/HomeScreen';
 import ReportScreen from './screens/ReportScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import ContactScreen from './screens/ContactScreen';
-// import { registerUploadTask } from './services/uploadTask'; // Removido
+
 
 import Ionicons from 'react-native-vector-icons/Ionicons'; 
 

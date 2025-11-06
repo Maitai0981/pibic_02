@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { useLLM, LLAMA3_2_1B_SPINQUANT } from 'react-native-executorch';
-import { useTheme } from '../context/ThemeContext'; // Reutiliza seu contexto
+import { useTheme } from '../context/ThemeContext';
 
 const ReportScreen = ({ route }) => {
   const { result, isLlmReady: isLlmReadyFromHome, llmError: llmErrorFromHome } = route.params;
