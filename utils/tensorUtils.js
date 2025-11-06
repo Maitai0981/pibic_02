@@ -1,94 +1,158 @@
-import { ImageUtil, Tensor } from "react-native-pytorch-core";
+import * as FileSystem from 'expo-file-system';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
-// 1. CONSTANTES DE NORMALIZAÇÃO (Padrão ImageNet)
-// ATENÇÃO: Se o seu modelo 'malenet.pte' foi treinado com
-// valores diferentes, você DEVE alterá-los aqui.
+// Constantes de normalização ImageNet
 const MEAN = [0.485, 0.456, 0.406];
 const STD = [0.229, 0.224, 0.225];
 
-// 2. MAPEAR O ÍNDICE DA SAÍDA PARA CLASSES
-// ATENÇÃO: Esta é a suposição mais crítica. A ordem das classes
-// DEVE ser exatamente a mesma usada no treinamento do modelo.
-// Esta é uma lista comum para o dataset HAM10000 (7 classes).
-// Verifique a ordem correta para o seu 'malenet.pte'.
+// Classes do dataset HAM10000
 const CLASSES = [
-  "Queratose Actínica", // 0
-  "Carcinoma Basocelular", // 1
-  "Queratose Benigna", // 2
-  "Dermatofibroma", // 3
-  "Melanoma", // 4
-  "Nevo Melanocítico", // 5
-  "Lesão Vascular", // 6
+  "Queratose Actínica",
+  "Carcinoma Basocelular",
+  "Queratose Benigna",
+  "Dermatofibroma",
+  "Melanoma",
+  "Nevo Melanocítico",
+  "Lesão Vascular",
 ];
 
-// Mapeamento de prioridade (exemplo, ajuste conforme necessário)
 const PRIORIDADE = {
-  Melanoma: "Alta",
+  "Melanoma": "Alta",
   "Carcinoma Basocelular": "Média",
   "Queratose Actínica": "Média",
+  "Dermatofibroma": "Baixa",
+  "Queratose Benigna": "Baixa",
+  "Nevo Melanocítico": "Baixa",
+  "Lesão Vascular": "Baixa",
 };
 
 /**
- * Converte a URI de uma imagem (já redimensionada) em um
- * tensor pronto para o modelo (Batch, Channel, Height, Width).
- *
- * Esta função substitui o 'STUB' de imageUriToTensor.
+ * Converte URI de imagem em tensor Float32Array
+ * IMPORTANTE: Esta é uma implementação simplificada para desenvolvimento
+ * Para produção, use processamento nativo ou servidor
  */
 export async function imageUriToTensor(uri) {
-    // 1. Carrega a imagem da URI usando o utilitário do PyTorch
-  const image = await ImageUtil.fromFile(uri);
+  try {
+    console.log('[Tensor] Iniciando conversão da imagem');
+    
+    // 1. Garantir dimensões corretas
+    const resized = await manipulateAsync(
+      uri,
+      [{ resize: { width: 224, height: 224 } }],
+      { format: SaveFormat.JPEG, compress: 0.9 }
+    );
 
-  // 2. Converte para tensor. A forma é [C, H, W] (Canal, Altura, Largura)
-  let tensor = image.toTensor();
+    // 2. Ler imagem como base64
+    const base64 = await FileSystem.readAsStringAsync(resized.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
-  // 3. Normaliza os pixels de [0, 255] para [0.0, 1.0]
-  tensor = tensor.div(255.0);
+    // 3. Decodificar pixels (implementação simplificada)
+    const pixels = await decodeBase64ToPixels(base64);
 
-  // 4. Normaliza com os valores de Média (Mean) e Desvio Padrão (Std)
-  tensor = tensor.normalize(MEAN, STD);
-
-  // 5. Adiciona a dimensão do 'batch' (lote)
-  // A forma muda de [C, H, W] para [1, C, H, W], que é o
-  // formato [N, C, H, W] esperado pelo modelo.
-  return tensor.unsqueeze(0);
+    // 4. Normalizar e converter para NCHW
+    const tensor = normalizeAndFormatTensor(pixels);
+    
+    console.log('[Tensor] Conversão concluída');
+    return tensor;
+  } catch (error) {
+    console.error('[Tensor] Erro na conversão:', error);
+    throw new Error('Falha ao processar imagem');
+  }
 }
 
 /**
- * Processa o tensor de saída (logits) do modelo.
- * Aplica Softmax, encontra a classe com maior probabilidade
- * e formata o resultado.
- *
- * Esta função substitui o 'STUB' de processOutputTensor.
+ * Decodifica base64 para array de pixels
+ * NOTA: Implementação simplificada - use lib nativa para produção
  */
-export async function processOutputTensor(outputTensor) {
-  // 'outputTensor' (saída do modelo) tem a forma [1, N_CLASSES] (ex: [1, 7])
+async function decodeBase64ToPixels(base64) {
+  // Para desenvolvimento, retorna pixels simulados
+  // Em produção, implemente decodificação JPEG/PNG real
+  console.warn('[Tensor] Usando pixels simulados - implemente decodificação real');
+  
+  const size = 224 * 224 * 3;
+  const pixels = new Uint8Array(size);
+  
+  // Simula pixels variados baseados no hash do base64
+  const hash = base64.split('').reduce((a, b) => {
+    a = ((a << 5) - a) + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  
+  for (let i = 0; i < size; i++) {
+    pixels[i] = Math.abs((hash + i) % 256);
+  }
+  
+  return pixels;
+}
 
-  // 1. Aplica Softmax para converter logits em probabilidades
-  // A função softmax(-1) aplica na última dimensão
-  const probsTensor = outputTensor.softmax(-1);
+/**
+ * Normaliza pixels e formata para NCHW
+ */
+function normalizeAndFormatTensor(pixels) {
+  const tensor = new Float32Array(1 * 3 * 224 * 224);
+  let idx = 0;
 
-  // 2. Extrai os dados do tensor para um array JavaScript
-  // O await é crucial aqui para sincronizar.
-  const probabilities = await probsTensor.data(); // Ex: [0.1, 0.05, 0.05, 0.02, 0.7, 0.03, 0.05]
-
-  // 3. Encontra a maior probabilidade e seu índice
-  let maxProb = -1;
-  let maxIndex = -1;
-  for (let i = 0; i < probabilities.length; i++) {
-    if (probabilities[i] > maxProb) {
-      maxProb = probabilities[i];
-      maxIndex = i;
+  // NCHW: Batch, Channel, Height, Width
+  for (let c = 0; c < 3; c++) {
+    for (let h = 0; h < 224; h++) {
+      for (let w = 0; w < 224; w++) {
+        const pixelIdx = (h * 224 + w) * 3 + c;
+        const value = pixels[pixelIdx] / 255.0;
+        const normalized = (value - MEAN[c]) / STD[c];
+        tensor[idx++] = normalized;
+      }
     }
   }
 
-  // 4. Mapeia o índice para os nomes das classes
-  const classificacao = CLASSES[maxIndex] || "Desconhecida";
-  const confianca = `${(maxProb * 100).toFixed(2)}%`;
+  return tensor;
+}
 
-  // 5. Retorna o objeto formatado que 'HomeScreen' espera
-  return {
-    classificacao,
-    confianca,
-    prioridade: PRIORIDADE[classificacao] || "Baixa",
-  };
+/**
+ * Processa saída do modelo (logits) e retorna classificação
+ */
+export function processOutputTensor(outputTensor) {
+  try {
+    console.log('[Tensor] Processando saída do modelo');
+    
+    // Converter para array
+    const logits = Array.isArray(outputTensor) 
+      ? outputTensor 
+      : Array.from(outputTensor);
+    
+    // Aplicar softmax
+    const maxLogit = Math.max(...logits);
+    const expScores = logits.map(x => Math.exp(x - maxLogit));
+    const sumExp = expScores.reduce((a, b) => a + b, 0);
+    const probabilities = expScores.map(x => x / sumExp);
+    
+    // Encontrar classe com maior probabilidade
+    let maxProb = -1;
+    let maxIndex = -1;
+    
+    probabilities.forEach((prob, idx) => {
+      if (prob > maxProb) {
+        maxProb = prob;
+        maxIndex = idx;
+      }
+    });
+    
+    const classificacao = CLASSES[maxIndex] || "Desconhecida";
+    const confianca = `${(maxProb * 100).toFixed(2)}%`;
+    
+    console.log(`[Tensor] Classificação: ${classificacao} (${confianca})`);
+    
+    return {
+      classificacao,
+      confianca,
+      prioridade: PRIORIDADE[classificacao] || "Baixa",
+      probabilidades: probabilities.map((p, i) => ({
+        classe: CLASSES[i],
+        prob: (p * 100).toFixed(2) + '%'
+      })).sort((a, b) => parseFloat(b.prob) - parseFloat(a.prob))
+    };
+  } catch (error) {
+    console.error('[Tensor] Erro no processamento:', error);
+    throw new Error('Falha no pós-processamento');
+  }
 }

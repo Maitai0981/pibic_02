@@ -29,11 +29,6 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
-        "READ_MEDIA_IMAGES",
-        "INTERNET",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "READ_MEDIA_IMAGES"
       ],
       "adaptiveIcon": {
@@ -48,7 +43,20 @@
     "plugins": [
       "expo-dev-client",
       "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.24",
+            "gradlePluginVersion": "8.5.2",
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 24
+          }
+        }
+      ]
     ],
+
     "extra": {
       "apiBaseUrl": "http://172.25.153.3:5000",
       "apiProtocol": "http",

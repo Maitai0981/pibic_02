@@ -1,6 +1,5 @@
-// hooks/useOnDeviceModel.js
 import { useState, useEffect } from 'react';
-import { Model } from 'react-native-executorch';
+import { Module } from 'react-native-executorch';
 
 export function useOnDeviceModel(modelName) {
   const [isReady, setIsReady] = useState(false);
@@ -8,21 +7,36 @@ export function useOnDeviceModel(modelName) {
   const [model, setModel] = useState(null);
 
   useEffect(() => {
+    let mounted = true;
+
     async function loadModel() {
       if (!modelName) {
-        setError(new Error("Nome do modelo não fornecido."));
+        setError(new Error("Nome do modelo não fornecido"));
         return;
       }
+
       try {
-        const loadedModel = await Model.load(modelName);
-        setModel(loadedModel);
-        setIsReady(true);
+        console.log(`[Model] Carregando modelo: ${modelName}`);
+        const loadedModel = await Module.load(modelName);
+        
+        if (mounted) {
+          setModel(loadedModel);
+          setIsReady(true);
+          console.log(`[Model] Modelo ${modelName} carregado com sucesso`);
+        }
       } catch (e) {
-        setError(e);
-        console.error(`Erro ao carregar modelo ${modelName}:`, e);
+        if (mounted) {
+          setError(e);
+          console.error(`[Model] Erro ao carregar ${modelName}:`, e);
+        }
       }
     }
+
     loadModel();
+
+    return () => {
+      mounted = false;
+    };
   }, [modelName]);
 
   return { isReady, model, error };

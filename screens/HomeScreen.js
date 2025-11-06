@@ -1,167 +1,108 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  Alert,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  Platform,
-} from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
-import ImageButton from "../components/ImageButton";
-import ImagePreview from "../components/ImagePreview";
-import styles from "../styles/style";
-import { useTheme } from "../context/ThemeContext";
-import * as ImageManipulator from "expo-image-manipulator";
+import React, { useState, useContext } from 'react';
+import { View, Text, ScrollView, Alert, ActivityIndicator, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { styles } from '../styles/style';
+import { ThemeContext } from '../context/ThemeContext';
+// CORREÇÃO: Alterado de './components/...' para '../components/...'
+import ImageButton from '../components/ImageButton';
+import ImagePreview from '../components/ImagePreview';
+import { useOnDeviceModel } from '../hooks/useOnDeviceModel';
 
-import { useOnDeviceModel } from '../hooks/useOnDeviceModel'; 
-import { imageUriToTensor, processOutputTensor } from '../utils/tensorUtils';
+export default function HomeScreen({ navigation }) {
+  const [image, setImage] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const { isDarkMode } = useContext(ThemeContext);
+  const { loadModel, runModel } = useOnDeviceModel();
 
-// CORREÇÃO: A importação correta é de '@react-native-rag/executorch'
-import { useLLM, LLAMA3_2_1B_SPINQUANT } from '@react-native-rag/executorch';
+  const containerStyle = isDarkMode ? styles.darkContainer : styles.lightContainer;
+  const textStyle = isDarkMode ? styles.darkText : styles.lightText;
+  const titleStyle = isDarkMode ? styles.darkTitle : styles.lightTitle;
 
-const HomeScreen = ({ navigation }) => {
-  const [imageUri, setImageUri] = useState(null);
-  const [diagnosisResult, setDiagnosisResult] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const { isDark } = useTheme();
-
-  const { 
-    isReady: isCnnReady, 
-    model: cnnModel, 
-    error: cnnError 
-  } = useOnDeviceModel('malenet.pte');
-  
-  const { 
-    isReady: isLlmReady, 
-    error: llmError 
-  } = useLLM({ model: LLAMA3_2_1B_SPINQUANT });
-
-  const requestPermissions = async () => {
-    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-    const mediaPermission =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (
-      cameraPermission.status !== "granted" ||
-      mediaPermission.status !== "granted"
-    ) {
-      Alert.alert(
-        "Permissões negadas",
-        "Você precisa permitir o uso da câmera e da galeria."
-      );
-      return false;
-    }
-    return true;
-  };
-
-  const handleCaptureImage = async () => {
-    const start = Date.now();
-    const granted = await requestPermissions();
-    if (!granted) return;
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-      setDiagnosisResult(null);
-      console.log("Tempo captura:", Date.now() - start, "ms");
-    }
-  };
-
-  const handleSelectImage = async () => {
-    const start = Date.now();
-    const granted = await requestPermissions();
-    if (!granted) return;
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-      setDiagnosisResult(null);
-      console.log("Tempo seleção:", Date.now() - start, "ms");
-    }
-  };
-
-  const handleAnalyze = async () => {
-    const startAnalysis = Date.now();
-
-    if (!imageUri) {
-      Alert.alert("Erro", "Selecione ou capture uma imagem primeiro.");
-      return;
-    }
-
-    if (!isCnnReady) {
-      const msg = cnnError 
-        ? `Erro ao carregar modelo: ${cnnError.message}` 
-        : "O modelo de análise ainda está carregando.";
-      Alert.alert("Modelo não disponível", msg);
-      return;
-    }
-
-    setIsLoading(true);
-    setDiagnosisResult(null);
-
+  const pickImage = async () => {
     try {
-      const resizeStart = Date.now();
-      const resizedImage = await ImageManipulator.manipulateAsync(
-        imageUri,
-        [{ resize: { width: 224, height: 224 } }],
-        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
-      );
-      console.log("Tempo redimensionar:", Date.now() - resizeStart, "ms");
-
-      const inputTensor = await imageUriToTensor(resizedImage.uri);
-
-      const apiStart = Date.now();
-      const output = await cnnModel.forward(inputTensor, 'output_0');
-      const outputTensor = output.output_0; 
-      console.log("Tempo Inferência:", Date.now() - apiStart, "ms");
-
-      const result = processOutputTensor(outputTensor);
-
-      const parsed = {
-        diagnostico: `Classificação: ${result.classificacao} (${result.confianca})`,
-        alternativas: "N/A (on-device)",
-        descricao: "Aguardando geração de laudo...",
-        laudo: "Aguardando geração de laudo...",
-        prioridade: result.prioridade || "N/A",
-        modelo: "MaleNet (on-device)",
-      };
-      setDiagnosisResult(parsed);
-      navigation.navigate("Report", { 
-        result: parsed,
-        isLlmReady: isLlmReady,
-        llmError: llmError ? llmError.message : null
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
       });
 
-      console.log("Tempo análise total:", Date.now() - startAnalysis, "ms");
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+        setResult(null); 
+      }
     } catch (error) {
-      console.error("Erro na análise local:", error);
-      Alert.alert(
-        "Erro",
-        error.message || "Erro desconhecido ao processar a imagem localmente."
-      );
-    } finally {
-      setIsLoading(false);
+      console.error("Erro ao escolher imagem: ", error);
+      Alert.alert("Erro", "Não foi possível carregar a imagem da galeria.");
     }
   };
 
-  const handleRemoveImage = () => {
-    setImageUri(null);
-    setDiagnosisResult(null);
+  const takePhoto = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (permissionResult.granted === false) {
+        Alert.alert("Permissão necessária", "Você precisa permitir o acesso à câmera para tirar fotos.");
+        return;
+      }
+
+      let result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+        setResult(null);
+      }
+    } catch (error) {
+      console.error("Erro ao tirar foto: ", error);
+      Alert.alert("Erro", "Não foi possível abrir a câmera.");
+    }
   };
 
-  const modelStatus = isCnnReady ? "online" : (cnnError ? "error" : "checking");
-  const modelStatusText = isCnnReady ? "Pronto" : (cnnError ? "Erro" : "Carregando...");
+  const analyzeImage = async () => {
+    if (!image) {
+      Alert.alert("Nenhuma imagem", "Por favor, selecione uma imagem ou tire uma foto primeiro.");
+      return;
+    }
 
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const model = await loadModel();
+      if (model) {
+        const predictions = await runModel(image, model);
+        setResult(predictions);
+      } else {
+        Alert.alert("Erro", "Não foi possível carregar o modelo de IA.");
+      }
+    } catch (error) {
+      console.error("Erro ao analisar imagem: ", error);
+      Alert.alert("Erro", `Ocorreu um erro durante a análise: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearImage = () => {
+    setImage(null);
+    setResult(null);
+  };
+
+  const formatResult = (predictions) => {
+    if (!predictions || predictions.length === 0) {
+      return "Nenhum resultado encontrado.";
+    }
+    
+    // Formata a predição (ajuste conforme a saída real do seu modelo)
+    // Exemplo: { className: "Melanoma", probability: 0.9 }
+    return predictions.map(p => 
+      `${p.className}: ${(p.probability * 100).toFixed(2)}%`
+    ).join('\n');
+  };
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View
@@ -270,5 +211,3 @@ const HomeScreen = ({ navigation }) => {
     </ScrollView>
   );
 };
-
-export default HomeScreen;
